@@ -14,10 +14,10 @@ pub fn part_one(input: &str) -> Option<usize> {
     let mut sum: usize = 0;
     let mut pos: usize = 0;
 
-    while lp < rp {
-        let le = input[lp..(lp + 1)].parse::<usize>().unwrap();
-        let re = input[rp..(rp + 1)].parse::<usize>().unwrap();
+    let mut le = input[lp..(lp + 1)].parse::<usize>().unwrap();
+    let mut re = input[rp..(rp + 1)].parse::<usize>().unwrap();
 
+    while lp < rp {
         if lhole > 0 {
             if rp.is_multiple_of(2) {
                 for _ in 0..std::cmp::min(lhole, rpop) {
@@ -29,10 +29,12 @@ pub fn part_one(input: &str) -> Option<usize> {
                 if rpop == 0 {
                     rp -= 1;
                     rid -= 1;
+                    re = input[rp..(rp + 1)].parse::<usize>().unwrap();
                 }
             } else {
                 _rhole += re;
                 rp -= 1;
+                re = input[rp..(rp + 1)].parse::<usize>().unwrap();
                 rpop = input[rp..(rp + 1)].parse::<usize>().unwrap();
             }
         } else {
@@ -46,6 +48,7 @@ pub fn part_one(input: &str) -> Option<usize> {
                 lhole = le
             }
             lp += 1;
+            le = input[lp..(lp + 1)].parse::<usize>().unwrap();
         }
 
         // println!("lp: {}, rp: {}", lp, rp);
