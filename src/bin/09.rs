@@ -9,13 +9,11 @@ pub fn part_one(input: &str) -> Option<usize> {
 
     let mut rpop: usize = input[rp..(rp + 1)].parse::<usize>().unwrap(); // left overs count from right end pops
     let mut lhole: usize = 0; // holes on the left
-    let mut _rhole: usize = 0; // left over holes on the right
 
-    let mut sum: usize = 0;
-    let mut pos: usize = 0;
+    let mut sum: usize = 0; // checksum
+    let mut pos: usize = 0; // position after compression
 
     let mut le = input[lp..(lp + 1)].parse::<usize>().unwrap();
-    let mut re = input[rp..(rp + 1)].parse::<usize>().unwrap();
 
     while lp < rp {
         if lhole > 0 {
@@ -29,12 +27,9 @@ pub fn part_one(input: &str) -> Option<usize> {
                 if rpop == 0 {
                     rp -= 1;
                     rid -= 1;
-                    re = input[rp..(rp + 1)].parse::<usize>().unwrap();
                 }
             } else {
-                _rhole += re;
                 rp -= 1;
-                re = input[rp..(rp + 1)].parse::<usize>().unwrap();
                 rpop = input[rp..(rp + 1)].parse::<usize>().unwrap();
             }
         } else {
@@ -50,11 +45,6 @@ pub fn part_one(input: &str) -> Option<usize> {
             lp += 1;
             le = input[lp..(lp + 1)].parse::<usize>().unwrap();
         }
-
-        // println!("lp: {}, rp: {}", lp, rp);
-        // println!("lid: {}, rid: {}", lid, rid);
-        // println!("rpop: {}, lhole: {}, rhole: {}", rpop, lhole, _rhole);
-        // println!("sum: {}, pos: {}\n", sum, pos);
     }
 
     if rpop > 0 {
@@ -84,7 +74,7 @@ mod day_09 {
     #[test]
     fn test_part_one_case_1() {
         let result = part_one("12345");
-        assert_eq!(result, Some(70));
+        assert_eq!(result, Some(60));
     }
 
     #[test]
