@@ -82,7 +82,7 @@ pub fn part_two(input: &str) -> Option<usize> {
     let mut start: usize = 0;
     let mut free_blocks: LinkedList<Block> = LinkedList::new();
     let mut allocated_blocks: LinkedList<Block> = LinkedList::new();
-    let mut reallocated_blocks: LinkedList<Block> = LinkedList::new();
+    let mut sum: usize = 0;
 
     input.chars().enumerate().for_each(|(id, ch)| {
         let space = ch.to_digit(10).unwrap() as usize;
@@ -95,21 +95,18 @@ pub fn part_two(input: &str) -> Option<usize> {
     });
 
     while let Some(mut block) = allocated_blocks.pop_back() {
-        if let Some(first_fit_block) = free_blocks
-            .iter_mut()
-            .find(|b| b.size >= block.size && b.start < block.start)
-        {
-            block.start = first_fit_block.start;
-            first_fit_block.start += block.size;
-            first_fit_block.size -= block.size;
+        for first_fit_block in free_blocks.iter_mut() {
+            if first_fit_block.size >= block.size && first_fit_block.start < block.start {
+                block.start = first_fit_block.start;
+                first_fit_block.start += block.size;
+                first_fit_block.size -= block.size;
+            } else if first_fit_block.start >= block.start {
+                break;
+            }
         }
 
-        reallocated_blocks.push_back(block);
+        sum += block.eval();
     }
-
-    let sum = reallocated_blocks
-        .iter()
-        .fold(0, |acc, block| acc + block.eval());
 
     Some(sum)
 }
