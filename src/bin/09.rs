@@ -1,4 +1,4 @@
-use std::collections::LinkedList;
+use std::collections::BinaryHeap;
 
 advent_of_code::solution!(9);
 
@@ -60,7 +60,7 @@ pub fn part_one(input: &str) -> Option<usize> {
 }
 
 #[allow(dead_code)]
-#[derive(Debug)]
+#[derive(Debug, Clone, Eq, PartialEq)]
 struct Block {
     id: Option<usize>,
     start: usize,
@@ -78,34 +78,64 @@ impl Block {
     }
 }
 
+impl PartialOrd for Block {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl Ord for Block {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        other.start.cmp(&self.start)
+    }
+}
+
 pub fn part_two(input: &str) -> Option<usize> {
-    let mut start: usize = 0;
-    let mut free_blocks: LinkedList<Block> = LinkedList::new();
-    let mut allocated_blocks: LinkedList<Block> = LinkedList::new();
-    let mut sum: usize = 0;
+    let mut start: usize = 0; // start position
+    let mut free_bc: Vec<BinaryHeap<Block>> = Vec::new(); // free block clusters
+    let mut alloc_b: Vec<Block> = Vec::new(); // allocated blocks
+    let mut sum: usize = 0; // checksum
+
+    for _ in 0..10 {
+        free_bc.push(BinaryHeap::new()); // initialize free blocks cluster
+    }
 
     input.chars().enumerate().for_each(|(id, ch)| {
-        let space = ch.to_digit(10).unwrap() as usize;
+        let size = ch.to_digit(10).unwrap() as usize; // block size (1-9) parsed
         if id.is_multiple_of(2) {
-            allocated_blocks.push_back(Block::new(start, space, Some(id / 2)));
+            alloc_b.push(Block::new(start, size, Some(id / 2)));
         } else {
-            free_blocks.push_back(Block::new(start, space, None));
+            free_bc[size].push(Block::new(start, size, None));
         }
-        start += space;
+        start += size;
     });
 
-    while let Some(mut block) = allocated_blocks.pop_back() {
-        for first_fit_block in free_blocks.iter_mut() {
-            if first_fit_block.size >= block.size && first_fit_block.start < block.start {
-                block.start = first_fit_block.start;
-                first_fit_block.start += block.size;
-                first_fit_block.size -= block.size;
-            } else if first_fit_block.start >= block.start {
-                break;
+    for chunk in alloc_b.iter_mut().rev() {
+        let mut x_size: Option<usize> = None; // free block size
+
+        for (size, heap) in free_bc.iter().enumerate().skip(chunk.size) {
+            if let Some(head) = heap.peek() {
+                if (x_size.is_none() || head.start < free_bc[x_size.unwrap()].peek().unwrap().start)
+                    && head.start < chunk.start
+                {
+                    x_size = Some(size);
+                }
             }
         }
 
-        sum += block.eval();
+        if let Some(size) = x_size {
+            let mut free_block = free_bc[size].pop().unwrap(); // get the best fit free block
+
+            chunk.start = free_block.start;
+            free_block.size -= chunk.size;
+            free_block.start += chunk.size;
+
+            if free_block.size > 0 {
+                free_bc[free_block.size].push(free_block);
+            }
+        }
+
+        sum += chunk.eval();
     }
 
     Some(sum)
