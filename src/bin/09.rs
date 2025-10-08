@@ -1,3 +1,5 @@
+use std::collections::LinkedList;
+
 advent_of_code::solution!(9);
 
 pub fn part_one(input: &str) -> Option<usize> {
@@ -57,8 +59,59 @@ pub fn part_one(input: &str) -> Option<usize> {
     Some(sum)
 }
 
-pub fn part_two(_input: &str) -> Option<u64> {
-    None
+#[allow(dead_code)]
+#[derive(Debug)]
+struct Block {
+    id: Option<usize>,
+    start: usize,
+    size: usize,
+}
+
+#[allow(dead_code)]
+impl Block {
+    fn new(start: usize, size: usize, id: Option<usize>) -> Self {
+        Block { start, size, id }
+    }
+
+    fn eval(&self) -> usize {
+        self.id.unwrap() * (((self.start + self.start + self.size - 1) * self.size) / 2)
+    }
+}
+
+pub fn part_two(input: &str) -> Option<usize> {
+    let mut start: usize = 0;
+    let mut free_blocks: LinkedList<Block> = LinkedList::new();
+    let mut allocated_blocks: LinkedList<Block> = LinkedList::new();
+    let mut reallocated_blocks: LinkedList<Block> = LinkedList::new();
+
+    input.chars().enumerate().for_each(|(id, ch)| {
+        let space = ch.to_digit(10).unwrap() as usize;
+        if id.is_multiple_of(2) {
+            allocated_blocks.push_back(Block::new(start, space, Some(id / 2)));
+        } else {
+            free_blocks.push_back(Block::new(start, space, None));
+        }
+        start += space;
+    });
+
+    while let Some(mut block) = allocated_blocks.pop_back() {
+        if let Some(first_fit_block) = free_blocks
+            .iter_mut()
+            .find(|b| b.size >= block.size && b.start < block.start)
+        {
+            block.start = first_fit_block.start;
+            first_fit_block.start += block.size;
+            first_fit_block.size -= block.size;
+        }
+
+        reallocated_blocks.push_back(block);
+    }
+
+    let sum = reallocated_blocks
+        .iter()
+        .fold(0, |acc, block| acc + block.eval());
+
+    Some(sum)
 }
 
 #[cfg(test)]
@@ -80,6 +133,24 @@ mod day_09 {
     #[test]
     fn test_part_two() {
         let result = part_two(&advent_of_code::template::read_file("examples", DAY));
-        assert_eq!(result, None);
+        assert_eq!(result, Some(2858));
+    }
+
+    #[test]
+    fn test_part_two_case_1() {
+        let result = part_two("1313165");
+        assert_eq!(result, Some(169))
+    }
+
+    #[test]
+    fn test_part_two_case_2() {
+        let result = part_two("9953877292941");
+        assert_eq!(result, Some(5768))
+    }
+
+    #[test]
+    fn test_part_two_case_3() {
+        let result = part_two("29702");
+        assert_eq!(result, Some(59))
     }
 }
