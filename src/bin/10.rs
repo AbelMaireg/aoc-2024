@@ -95,16 +95,50 @@ impl Grid {
         scored_nodes.len() as i64
     }
 
+    fn solve2(&mut self) -> i64 {
+        let mut scored_nodes: i64 = 0;
+
+        while let Some(node) = self.zeros.pop() {
+            if node.val == 9 {
+                scored_nodes += 1;
+                continue;
+            }
+
+            for dir in Self::DIRECTIONS {
+                let mut next = node.clone();
+                next.cur.0 += dir.0;
+                next.cur.1 += dir.1;
+
+                if next.cur.0 < 0
+                    || next.cur.1 < 0
+                    || next.cur.0 >= self.width
+                    || next.cur.1 >= self.height
+                {
+                    continue;
+                }
+
+                next.val = self.nodes[next.cur.1 as usize][next.cur.0 as usize];
+
+                if next.val - node.val == 1 {
+                    self.zeros.push(next)
+                }
+            }
+        }
+
+        scored_nodes
+    }
+
     const DIRECTIONS: [(i64, i64); 4] = [(0, 1), (1, 0), (0, -1), (-1, 0)];
 }
 
-pub fn part_one(_input: &str) -> Option<i64> {
-    let mut grid = Grid::new(_input);
+pub fn part_one(input: &str) -> Option<i64> {
+    let mut grid = Grid::new(input);
     Some(grid.solve())
 }
 
-pub fn part_two(_input: &str) -> Option<u64> {
-    None
+pub fn part_two(input: &str) -> Option<i64> {
+    let mut grid = Grid::new(input);
+    Some(grid.solve2())
 }
 
 #[cfg(test)]
@@ -120,6 +154,6 @@ mod tests {
     #[test]
     fn test_part_two() {
         let result = part_two(&advent_of_code::template::read_file("examples", DAY));
-        assert_eq!(result, None);
+        assert_eq!(result, Some(81));
     }
 }
