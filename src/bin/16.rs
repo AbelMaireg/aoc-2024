@@ -36,19 +36,22 @@ impl Maze {
         self.tiles[pos.y][pos.x]
     }
 
-    fn solve(&mut self) -> Option<usize> {
+    fn solve(&mut self) -> (usize, usize) {
         use Direction::*;
 
         let start_tile = self.start;
         let end_tile = self.end;
         let mut min = BinaryHeap::new();
         let mut visited = HashSet::new();
+        let mut min_cost = usize::MAX;
+        let mut neighbor_walls = HashSet::new();
 
         [Right, Up, Down, Left].iter().for_each(|&dir| {
             min.push(State {
                 cost: 0,
                 position: start_tile,
                 direction: dir,
+                walls_around: HashSet::new(),
             })
         });
 
@@ -56,10 +59,19 @@ impl Maze {
             cost: cc,
             position: cp,
             direction: cd,
+            walls_around: mut wa,
         }) = min.pop()
         {
+            wa.insert(cp);
+
             if cp == end_tile {
-                return Some(cc);
+                if cc > min_cost {
+                    break;
+                } else {
+                    min_cost = cc;
+                    neighbor_walls = neighbor_walls.union(&wa).cloned().collect();
+                    continue;
+                }
             }
 
             visited.insert((cp, cd));
@@ -70,7 +82,8 @@ impl Maze {
                     cost: cc + 1,
                     position: np,
                     direction: cd,
-                })
+                    walls_around: wa.clone(),
+                });
             }
 
             for nd in cd.turns() {
@@ -79,22 +92,24 @@ impl Maze {
                         cost: cc + 1001,
                         position: cp.add(nd),
                         direction: nd,
+                        walls_around: wa.clone(),
                     });
                 }
             }
         }
 
-        None
+        (min_cost, neighbor_walls.len())
     }
 }
 
 pub fn part_one(input: &str) -> Option<usize> {
     let mut maze = Maze::new(input);
-    maze.solve()
+    maze.solve().0.into()
 }
 
-pub fn part_two(_input: &str) -> Option<u64> {
-    None
+pub fn part_two(input: &str) -> Option<usize> {
+    let mut maze = Maze::new(input);
+    maze.solve().1.into()
 }
 
 #[cfg(test)]
@@ -159,11 +174,12 @@ impl Position {
 }
 
 #[allow(dead_code)]
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Debug)]
 struct State {
     cost: usize,
     position: Position,
     direction: Direction,
+    walls_around: HashSet<Position>,
 }
 
 impl PartialEq for State {
